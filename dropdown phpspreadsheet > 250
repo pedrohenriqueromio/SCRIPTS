@@ -1,0 +1,94 @@
+<?php
+
+namespace model\produtos\planilha ;
+
+class GerarEstoque{
+
+    function __construct($header , $spreadsheet) {
+
+        $this->header = $header;
+        $this->spreadsheet = $spreadsheet;
+    
+    }
+
+    public function exportar( ){
+
+        $index = 0 ;
+        $this->spreadsheet->setActiveSheetIndexByName('Worksheet');
+        $this->spreadsheet->getActiveSheet()->setTitle('Config');
+        $this->spreadsheet->getActiveSheet()
+            ->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_HIDDEN);
+
+        $styleArray = array('font' => array('bold' => true));
+        $configSheet = $this->spreadsheet->getActiveSheet();
+
+        foreach ($this->header['header'] as $k => $estoque) {
+
+            $locaisSUM =count( $this->header['estoque'][$k] )  ;
+
+            $ColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index);
+
+            $myWorkSheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($this->spreadsheet, $estoque);
+    
+            $this->spreadsheet->addSheet($myWorkSheet, $index);
+            $myWorkSheet = null ;
+
+            $this->spreadsheet->setActiveSheetIndex($index);
+            $activeSheet = $this->spreadsheet->getActiveSheet();
+
+            $activeSheet->setTitle($estoque);
+
+            $activeSheet->setCellValue('A1', 'SKU')
+                ->setCellValue('B1', 'Local (Estoque)')
+                ->setCellValue('C1', 'Quantidade Atual')
+                ->getStyle(  'A1:C1' )
+                ->applyFromArray($styleArray) ;     
+                 
+            for ($i = 2; $i < 100; $i++) {
+    
+                $validation = $activeSheet->getCell('B' . $i)->getDataValidation();
+    
+                $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+    
+                $estoqueArr = [];
+                
+                $objValidation = $this->spreadsheet->getActiveSheet()->getCell('B' . $i)->getDataValidation()  
+
+                    ->setType( \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST )     
+                    ->setErrorStyle( \PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION )     
+                    ->setAllowBlank(false)
+                    ->setShowInputMessage(true)
+                    ->setShowErrorMessage(true)
+                    ->setShowDropDown(true)
+                    ->setErrorTitle('Erro de entrada')
+                    ->setError('Escolha uma das oções abaixo')
+                    ->setPromptTitle('Opções válidas')
+                    ->setFormula1('\'Config\'!$'.$ColumnIndex.'$1:$'.$ColumnIndex.'$'.$locaisSUM); 
+    
+                if ( $locaisSUM > 0 ){
+
+                    foreach ($this->header['estoque'][$k] as $estoque) {
+                        $estoqueArr[][] = (string) $estoque['name'] ?? '' ;
+                    }
+        
+                    $configSheet->fromArray($estoqueArr ,  NULL, $ColumnIndex.'1');
+    
+                }
+            }
+    
+            $cols = ['A', 'B', 'C'];
+    
+            foreach ($cols as $col) {
+                $activeSheet->getColumnDimension($col)->setWidth('20');
+            }
+    
+            $index++;
+        }
+
+
+        return ( $this->spreadsheet ) ; 
+
+    }
+
+
+}
