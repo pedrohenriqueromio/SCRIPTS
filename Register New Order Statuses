@@ -1,0 +1,40 @@
+// Register New Order Statuses
+function wpex_wc_register_post_statuses() {
+    register_post_status( 'wc-ox-progress-1', array(
+        'label'                     => _x( 'OX - Experiência Realizada', 'WooCommerce Order status', 'text_domain' ),
+        'public'                    => true,
+        'exclude_from_search'       => false,
+        'show_in_admin_all_list'    => true,
+        'show_in_admin_status_list' => true,
+        'label_count'               => _n_noop( 'Approved (%s)', 'Approved (%s)', 'text_domain' )
+    ) );
+}
+add_filter( 'init', 'wpex_wc_register_post_statuses' );
+
+// Add New Order Statuses to WooCommerce
+function wpex_wc_add_order_statuses( $order_statuses ) {
+    $order_statuses['wc-ox-progress-1'] = _x( 'OX - Experiência Realizada', 'WooCommerce Order status', 'text_domain' );
+    return $order_statuses;
+}
+add_filter( 'wc_order_statuses', 'wpex_wc_add_order_statuses' );
+
+// Register New Order Statuses
+function wpex_wc_register_post_statuses2() {
+    register_post_status( 'wc-ox-progress-2', array(
+        'label'                     => _x( 'OX - Pagamento realizado', 'WooCommerce Order status', 'text_domain' ),
+        'public'                    => true,
+        'exclude_from_search'       => false,
+        'show_in_admin_all_list'    => true,
+        'show_in_admin_status_list' => true,
+        'label_count'               => _n_noop( 'Approved (%s)', 'Approved (%s)', 'text_domain' )
+    ) );
+}
+
+add_filter( 'init', 'wpex_wc_register_post_statuses2' );
+
+// Add New Order Statuses to WooCommerce
+function wpex_wc_add_order_statuses2( $order_statuses ) {
+    $order_statuses['wc-ox-progress-2'] = _x( 'OX - Pagamento realizado', 'WooCommerce Order status', 'text_domain' );
+    return $order_statuses;
+}
+add_filter( 'wc_order_statuses', 'wpex_wc_add_order_statuses2' );
