@@ -1,0 +1,682 @@
+------------------------------------------------------------
+// wp-content/plugins/doctor-lotto/controller/api_controller.php
+
+<?php
+
+/**
+ * Doctor Lotto API Controller Class
+ *
+ * Todas as funcionalidades para a API.
+ *
+ * @package doctor lotto
+ * @author Nuvem Singular
+ *
+ * @since 1.0.0
+ */
+class api_controller
+{
+
+    /*
+     * CONSTRUCTOR
+     */
+    protected function __construct()
+    { }
+
+
+    public static function executePost($endpoint, $postData, $http_header = NULL)
+    {
+        $url = get_field('url', 'option');
+        $url .= '/' . $endpoint;
+
+        $body = json_encode($postData);
+
+        $titulo = 'DOCTOR LOTTO POST ' . $endpoint;
+
+        $args = array(
+            'headers' => array(
+                'content-type' => 'application/json'
+            ),
+            'body' => $body,
+        );
+
+        $response = wp_remote_post($url, $args);
+
+        $retorno  = json_decode(wp_remote_retrieve_body($response), true);
+
+        return $retorno;
+    }
+
+    public static function executeDelete($endpoint)
+    {
+        $url = get_field('url', 'option');
+        $url .= '/' . $endpoint;
+
+        $args = array(
+            'method' => 'DELETE',
+            'headers' => array(
+                'content-type' => 'application/x-www-form-urlencoded'
+            ),
+        );
+
+
+        $response = wp_remote_post($url, $args);
+
+        $retorno  = json_decode(wp_remote_retrieve_body($response), true);
+
+        return $retorno;
+    }
+
+
+    public static function executeGet($endpoint, $force = false, $max_age_seconds = 600)
+    {
+        $transient_name = "api-" . $endpoint;// hash('sha256', $endpoint);
+        $transient =  get_transient($transient_name);
+
+        file_put_contents("log.txt", " transient_name :'.$transient_name.', \n",FILE_APPEND);
+        file_put_contents("log.txt", serialize($transient) ." \n",FILE_APPEND);
+
+        if ($force !== false) {
+
+            $data = $transient;
+
+        } else {
+
+            file_put_contents("log.txt", 'not_forced' ." \n",FILE_APPEND);
+
+            if ($transient === false) {
+
+                file_put_contents("log.txt", 'transient === false' ." \n",FILE_APPEND);
+
+                $url = get_field('url', 'option');
+                $url .= '/' . $endpoint;
+
+                $url_segments = explode('/', $url);
+
+                if(in_array('..', $url_segments)) {
+                    // permitir navegar na url relativamente
+                    $url = implode('/', array_filter($url_segments, function($segment, $i) use ($url_segments) {
+                        $next = array_key_exists($i + 1, $url_segments) ? $url_segments[$i + 1] : '';
+                        return !in_array('..', [$next, $segment]);
+                    }, ARRAY_FILTER_USE_BOTH));
+                }
+
+                $args = array(
+                    'httpversion' => '1.1',
+                    'method'      => 'GET',
+                    'user-agent'  => 'DOCTOR LOTTO - Website',
+                    'headers'     => array(
+                        'content-type' => 'application/x-www-form-urlencoded'
+                    )
+                );
+
+                $request = wp_remote_request($url, $args);
+
+                file_put_contents("log.txt", 'request->'." \n",FILE_APPEND);
+                file_put_contents("log.txt", serialize($request) ." \n",FILE_APPEND);
+
+                $data    = json_decode(wp_remote_retrieve_body($request), true);
+
+                file_put_contents("log.txt", 'data->'." \n",FILE_APPEND);
+                file_put_contents("log.txt", serialize($data) ." \n",FILE_APPEND);
+
+                if(!empty($data)) {
+                    file_put_contents("log.txt", "not empty data var \n",FILE_APPEND);
+
+                    set_transient($transient_name, $data, $max_age_seconds);
+                } else if(!empty($transient)) {
+                    file_put_contents("log.txt", "not empty data transient \n",FILE_APPEND);
+
+                    $data = $transient;
+                    set_transient($transient_name, $data, $max_age_seconds);
+                }
+            } else {
+
+                $data = $transient;
+
+            }
+        }
+
+        file_put_contents("log.txt", " return \n",FILE_APPEND);
+        file_put_contents("log.txt", serialize($data) ." \n",FILE_APPEND);
+
+        return $data;
+    }
+}
+
+
+
+
+
+---------------------------------------------------------
+wp-content/plugins/doctor-lotto/controller/loteria_controller.php
+
+<?php
+
+/**
+ * Loteria Controller Class
+ *
+ * Todas as funcionalidades para loteria.
+ *
+ * @package doctor-lotto
+ * @author Nuvem Singular
+ *
+ * @since 1.0.0
+ */
+class loteria_controller
+{
+    /*
+     * CONSTRUCTOR
+     */
+    function __construct()
+    {
+    }
+
+
+    static function getResultadosSimplificados($loteria_api_id = null, $especial = false)
+    {
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        $endpoint = '/todos-resultados-simplificado?l=' . $loteria_api_id . '&e=' . $especial;
+        $retorno = api_controller::executeGet($endpoint);
+
+        if (self::trataRetorno($retorno)) {
+            return $retorno;
+        }
+        return false;
+    }
+
+    static function getAllNextConcourses()
+    {
+        $endpoint = '/loterias/concursos';
+
+        $retorno = api_controller::executeGet($endpoint);
+
+        if (self::trataRetorno($retorno)) {
+            return $retorno;
+        }
+        return false;
+    }
+
+    static function getAllNextSorteio($loteria_api_id = null, $especial = false)
+    {
+
+        $t = 1;
+        if ($especial) {
+            $t = 3;
+        }
+
+        $endpoint = '/loterias/concursosResumo?t=' . $t; // 1 - Próximos concursos
+
+        file_put_contents("log.txt", " \n" . '-> getAllNextSorteio HTTP_USER_AGENT:'. $_SERVER['HTTP_USER_AGENT'] . ' HTTP_REFERER:' . ( $_SERVER['HTTP_REFERER'] ?? 'empty referer') . " Endpoint: ". $endpoint. ' '. date("Y/m/d h:i:s") .  " \n",FILE_APPEND);
+
+        $retorno = api_controller::executeGet($endpoint);
+        if (!empty($retorno) && is_array($retorno)) {
+            $retorno = array_filter($retorno, function ($item) use ($especial) {
+                return $item['Especial'] == $especial;
+            });
+        }
+        
+        return $retorno;
+    }
+
+    static function getNextSorteio($loteria_api_id = null, $especial = false)
+    {
+
+        $t = 1;
+        if ($especial) {
+            $t = 3;
+        }
+
+        $endpoint = '/loterias/concursosResumo?t=' . $t; // 1 - Próximos concursos
+        $retorno = api_controller::executeGet($endpoint);
+
+        if (empty($loteria_api_id) || empty($retorno)) {
+            return false;
+        } else {
+            foreach ($retorno as $loteria) {
+                if ($loteria['CodigoDaLoteria'] == $loteria_api_id) {
+                    return $loteria;
+                }
+            }
+            return false;
+        }
+    }
+
+    static function getLastSorteio($loteria_api_id = null, $especial = false, $quantidade = 5)
+    {
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = "/ultimos-resultados-filtrados?l=$loteria_api_id&q=$quantidade&c=9999999&e=$especial"; // 1 - Próximos concursos
+
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+                return $retorno; // retorna 5 últimas loterias
+            }
+            return false;
+        }
+    }
+
+    static function getResumoSorteio($loteria_api_id = null, $numero_sorteio = null, $qtd = 1, $especial = false)
+    {
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id) || empty($numero_sorteio)) {
+            return false;
+        } else {
+            $endpoint = '/ultimos-resultados-filtrados?l=' . $loteria_api_id . '&c=' . $numero_sorteio . '&q=' . $qtd . '&e=' . $especial; // 1 - Próximos concursos
+            $retorno = api_controller::executeGet($endpoint);
+            if (self::trataRetorno($retorno)) {
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getSorteiosBusca($loteria_api_id = null, $mes = null, $ano = null, $especial = false)
+    {
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = '/ultimos-resultados-filtrados?q=15&l=' . $loteria_api_id . '&m=' . $mes . '&ano=' . $ano . '&e=' . $especial;
+
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getMaioresPremiacoes($loteria_api_id = null, $qtd = 4, $especial = false)
+    {
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = '/estatistica/maiorPremiacao?l=' . $loteria_api_id . '&t=' . $qtd . '&e=' . $especial . '&a=false';
+            $retorno = api_controller::executeGet($endpoint);
+            if (self::trataRetorno($retorno)) {
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getPremiosPorEstado($loteria_api_id = null, $qtd = 4, $especial = false)
+    {
+
+        $ordem = ($especial) ? 6 : 3; // Premiação especial deve-se mudar a ordem
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/premiacaoEstado?l=' . $loteria_api_id . '&o=' . $ordem;
+            $retorno = api_controller::executeGet($endpoint);
+
+
+            if (self::trataRetorno($retorno)) {
+                if ($qtd > 50) {
+                    return $retorno;
+                } else {
+                    return array_slice($retorno, 0, $qtd);
+                }
+            }
+
+            return false;
+        }
+    }
+
+    static function getDezenasMaisSorteadas($loteria_api_id = null, $ordem = 'sorteio', $qtd = 5, $especial = false, $sorteio = 0)
+    {  // ordem : sorteio ou dezena
+        $especial = ($especial) ? 'true' : 'false';
+        $qtdDezenasResposta = 10;
+        if ($loteria_api_id == 8) {
+            $qtdDezenasResposta = 5;
+        }
+        $t = round($qtd / $qtdDezenasResposta) + 1;
+        if ($t == 0) $t = 1;
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/numerosMaisSorteados?l=' . $loteria_api_id . '&t=' . $t . '&o=' . $ordem . '&e=' . $especial;
+
+            $retorno = api_controller::executeGet($endpoint);
+            if (self::trataRetorno($retorno)) {
+                $dezenas = array();
+                $arr_dezenas = $retorno[$sorteio]['Dezenas'];
+
+                foreach ($arr_dezenas as $arr) {
+                    $dezenas = array_merge($dezenas, $arr);
+                }
+
+                return array_slice($dezenas, 0, $qtd);
+            }
+            return false;
+        }
+    }
+
+    static function getDezenasMenosSorteadas($loteria_api_id = null, $ordem = 'sorteio', $qtd = 5, $especial = false, $sorteio = 0)
+    {  // ordem : sorteio ou dezena
+        
+        $t = 50;
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/numerosMaisSorteados?l=' . $loteria_api_id . '&t=' . $t . '&o=' . $ordem . '&e=' . $especial;
+
+            $retorno = api_controller::executeGet($endpoint);
+            if (self::trataRetorno($retorno)) {
+                $dezenas = array();
+                $arr_dezenas = $retorno[$sorteio]['Dezenas'];
+
+                foreach ($arr_dezenas as $arr) {
+                    $dezenas = array_merge($dezenas, $arr);
+                }
+
+                $dezenas = array_reverse($dezenas);
+                $dezenas = array_slice($dezenas, 0, $qtd);
+
+                usort($dezenas, function ($a, $b) {
+                    return $b['qtd'] - $a['qtd'];
+                });
+
+                return $dezenas;
+            }
+            return false;
+        }
+    }
+
+    static function getDezenasMaisAtrasadas($loteria_api_id = null, $ordem = 'sorteio', $qtd = 5, $especial = false, $sorteio = 0)
+    {  // ordem : sorteio ou dezena
+        $especial = ($especial) ? 'true' : 'false';
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/dezenasMaisAtrasadas?l=' . $loteria_api_id . '&t=50&o=' . $ordem . '&e=' . $especial;
+
+            $retorno = api_controller::executeGet($endpoint);
+            if (self::trataRetorno($retorno)) {
+                $dezenas = array();
+                $arr_dezenas = $retorno[$sorteio]['Dezenas'];
+
+                foreach ($arr_dezenas as $arr) {
+                    $dezenas = array_merge($dezenas, $arr);
+                }
+
+                $dezenas = array_reverse($dezenas);
+
+                return array_slice($dezenas, 0, $qtd);
+            }
+            return false;
+        }
+    }
+
+    static function getLoteriaAnoInicioUltimoConcurso($loteria_api_id = null, $especial = false)
+    {  // ordem : sorteio ou dezena        
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'concurso?l=' . $loteria_api_id . '&c=999999&e=' . $especial;
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+                $info = array();
+                $info['AnoInicioLoteria'] = $retorno['AnoInicioLoteria'];
+                $info['NumeroAnterior'] = $retorno['NumeroAnterior'];
+
+                return $info;
+            }
+            return false;
+        }
+    }
+
+    static function getInformacaoPrimeiraLoteria($loteria_api_id = null, $especial = false)
+    {  // ordem : sorteio ou dezena
+
+        $especial = ($especial) ? 'true' : 'false';
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'concurso?l=' . $loteria_api_id . '&c=1&e=' . $especial;
+
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getMaioresPremiacoesQtd($loteria_api_id = null, $qtd = 10, $acumulado = false)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/maiorPremiacao?l=' . $loteria_api_id . '&t=' . $qtd . '&a=' . ($acumulado ? 'true' : 'false');
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getPremiosIndividuais($loteria_api_id = null, $acumulado = false)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/maiorPremiacao?l=' . $loteria_api_id . '&t=10&a=N' . ($acumulado ? 'E' : '');
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getSomaDasDezenas($loteria_api_id = null, $especial = false)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/somaDasDezenas?l=' . $loteria_api_id . '&e=' . ($especial ? 'true' : 'false');
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getPareseImpares($loteria_api_id = null, $especial = false)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/paresEImpares?l=' . $loteria_api_id . '&e=' . ($especial ? 'true' : 'false');
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getLinhasColunas($loteria_api_id = null, $especial = false, $ordem = 'linha')
+    {  // ordem : linha ou coluna        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/linhasEColunas?l=' . $loteria_api_id . '&o=' . $ordem . '&e=' . ($especial ? 'true' : 'false');
+
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getColunasPorConcurso($loteria_api_id = null)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/colunasPorConcurso?l=' . $loteria_api_id;
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getColunasSeguidasPorConcurso($loteria_api_id = null)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/colunasSeguidasPorConcurso?l=' . $loteria_api_id;
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getPlacaresMaisFrequentes($loteria_api_id = null)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/placaresMaisFrequentes?l=' . $loteria_api_id;
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+
+    static function getSomaDeGolsPorConcurso($loteria_api_id = null)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/somaDeGolsPorConcurso?l=' . $loteria_api_id;
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+
+    static function getQuantidadeDeGolsPorConcurso($loteria_api_id = null)
+    {  // ordem : sorteio ou dezena        
+
+        if (empty($loteria_api_id)) {
+            return false;
+        } else {
+            $endpoint = 'estatistica/quantidadeDeGolsPorConcurso?l=' . $loteria_api_id;
+            $retorno = api_controller::executeGet($endpoint);
+
+            if (self::trataRetorno($retorno)) {
+
+                return $retorno;
+            }
+            return false;
+        }
+    }
+
+    static function getQtySorteioAcumulados($loteria_api_id, $especial = false, $qtdSorteiosRequest = 20, $qtdTentativas = 3)
+    {
+        if (empty($loteria_api_id)) {
+            return null;
+        }
+
+        $tentativa = 1;
+        $ganhou = false;
+
+        while (!$ganhou && $tentativa < $qtdTentativas) {
+            $qtd = $tentativa * $qtdSorteiosRequest;
+            $qtdSorteiosAcumulados = 0;
+            $data = self::getLastSorteio($loteria_api_id, $especial, $qtd);
+
+            if (!empty($data)) {
+                foreach ($data as $item) {
+                    if (isset($item['Premiacao']) && is_array($item['Premiacao']) && isset($item['Premiacao'][0]['Acertadores']) && $item['Premiacao'][0]['Acertadores'] > 0) {
+                        $ganhou = true;
+                        break;
+                    } else {
+                        $qtdSorteiosAcumulados++;
+                    }
+                }
+            }
+
+            $tentativa++;
+        }
+
+        return $qtdSorteiosAcumulados;
+    }
+
+    static private function trataRetorno($retorno)
+    {
+        if (empty($retorno)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
