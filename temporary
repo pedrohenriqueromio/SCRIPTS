@@ -1,682 +1,840 @@
-------------------------------------------------------------
-// wp-content/plugins/doctor-lotto/controller/api_controller.php
-
 <?php
-
-/**
- * Doctor Lotto API Controller Class
- *
- * Todas as funcionalidades para a API.
- *
- * @package doctor lotto
- * @author Nuvem Singular
- *
- * @since 1.0.0
- */
-class api_controller
-{
-
-    /*
-     * CONSTRUCTOR
-     */
-    protected function __construct()
-    { }
-
-
-    public static function executePost($endpoint, $postData, $http_header = NULL)
-    {
-        $url = get_field('url', 'option');
-        $url .= '/' . $endpoint;
-
-        $body = json_encode($postData);
-
-        $titulo = 'DOCTOR LOTTO POST ' . $endpoint;
-
-        $args = array(
-            'headers' => array(
-                'content-type' => 'application/json'
-            ),
-            'body' => $body,
-        );
-
-        $response = wp_remote_post($url, $args);
-
-        $retorno  = json_decode(wp_remote_retrieve_body($response), true);
-
-        return $retorno;
+    if ( ! isset( $item_data->preview ) ) {
+        do_action( 'woocommerce_email_header', $email_heading, $email );
     }
 
-    public static function executeDelete($endpoint)
-    {
-        $url = get_field('url', 'option');
-        $url .= '/' . $endpoint;
-
-        $args = array(
-            'method' => 'DELETE',
-            'headers' => array(
-                'content-type' => 'application/x-www-form-urlencoded'
-            ),
-        );
+if ( $item_data->is_pdf ) {
+?>
 
 
-        $response = wp_remote_post($url, $args);
-
-        $retorno  = json_decode(wp_remote_retrieve_body($response), true);
-
-        return $retorno;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
 
 
-    public static function executeGet($endpoint, $force = false, $max_age_seconds = 600)
-    {
-        $transient_name = "api-" . $endpoint;// hash('sha256', $endpoint);
-        $transient =  get_transient($transient_name);
-
-        file_put_contents("log.txt", " transient_name :'.$transient_name.', \n",FILE_APPEND);
-        file_put_contents("log.txt", serialize($transient) ." \n",FILE_APPEND);
-
-        if ($force !== false) {
-
-            $data = $transient;
-
-        } else {
-
-            file_put_contents("log.txt", 'not_forced' ." \n",FILE_APPEND);
-
-            if ($transient === false) {
-
-                file_put_contents("log.txt", 'transient === false' ." \n",FILE_APPEND);
-
-                $url = get_field('url', 'option');
-                $url .= '/' . $endpoint;
-
-                $url_segments = explode('/', $url);
-
-                if(in_array('..', $url_segments)) {
-                    // permitir navegar na url relativamente
-                    $url = implode('/', array_filter($url_segments, function($segment, $i) use ($url_segments) {
-                        $next = array_key_exists($i + 1, $url_segments) ? $url_segments[$i + 1] : '';
-                        return !in_array('..', [$next, $segment]);
-                    }, ARRAY_FILTER_USE_BOTH));
-                }
-
-                $args = array(
-                    'httpversion' => '1.1',
-                    'method'      => 'GET',
-                    'user-agent'  => 'DOCTOR LOTTO - Website',
-                    'headers'     => array(
-                        'content-type' => 'application/x-www-form-urlencoded'
-                    )
-                );
-
-                $request = wp_remote_request($url, $args);
-
-                file_put_contents("log.txt", 'request->'." \n",FILE_APPEND);
-                file_put_contents("log.txt", serialize($request) ." \n",FILE_APPEND);
-
-                $data    = json_decode(wp_remote_retrieve_body($request), true);
-
-                file_put_contents("log.txt", 'data->'." \n",FILE_APPEND);
-                file_put_contents("log.txt", serialize($data) ." \n",FILE_APPEND);
-
-                if(!empty($data)) {
-                    file_put_contents("log.txt", "not empty data var \n",FILE_APPEND);
-
-                    set_transient($transient_name, $data, $max_age_seconds);
-                } else if(!empty($transient)) {
-                    file_put_contents("log.txt", "not empty data transient \n",FILE_APPEND);
-
-                    $data = $transient;
-                    set_transient($transient_name, $data, $max_age_seconds);
-                }
-            } else {
-
-                $data = $transient;
-
-            }
-        }
-
-        file_put_contents("log.txt", " return \n",FILE_APPEND);
-        file_put_contents("log.txt", serialize($data) ." \n",FILE_APPEND);
-
-        return $data;
-    }
-}
-
-
-
-
-
----------------------------------------------------------
-wp-content/plugins/doctor-lotto/controller/loteria_controller.php
-
-<?php
-
-/**
- * Loteria Controller Class
- *
- * Todas as funcionalidades para loteria.
- *
- * @package doctor-lotto
- * @author Nuvem Singular
- *
- * @since 1.0.0
- */
-class loteria_controller
-{
-    /*
-     * CONSTRUCTOR
-     */
-    function __construct()
-    {
-    }
-
-
-    static function getResultadosSimplificados($loteria_api_id = null, $especial = false)
-    {
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        $endpoint = '/todos-resultados-simplificado?l=' . $loteria_api_id . '&e=' . $especial;
-        $retorno = api_controller::executeGet($endpoint);
-
-        if (self::trataRetorno($retorno)) {
-            return $retorno;
-        }
-        return false;
-    }
-
-    static function getAllNextConcourses()
-    {
-        $endpoint = '/loterias/concursos';
-
-        $retorno = api_controller::executeGet($endpoint);
-
-        if (self::trataRetorno($retorno)) {
-            return $retorno;
-        }
-        return false;
-    }
-
-    static function getAllNextSorteio($loteria_api_id = null, $especial = false)
-    {
-
-        $t = 1;
-        if ($especial) {
-            $t = 3;
-        }
-
-        $endpoint = '/loterias/concursosResumo?t=' . $t; // 1 - Próximos concursos
-
-        file_put_contents("log.txt", " \n" . '-> getAllNextSorteio HTTP_USER_AGENT:'. $_SERVER['HTTP_USER_AGENT'] . ' HTTP_REFERER:' . ( $_SERVER['HTTP_REFERER'] ?? 'empty referer') . " Endpoint: ". $endpoint. ' '. date("Y/m/d h:i:s") .  " \n",FILE_APPEND);
-
-        $retorno = api_controller::executeGet($endpoint);
-        if (!empty($retorno) && is_array($retorno)) {
-            $retorno = array_filter($retorno, function ($item) use ($especial) {
-                return $item['Especial'] == $especial;
-            });
+    <style type="text/css" media="screen">
+        /* Linked Styles */
+        
+        * {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            color: #6c757d;
         }
         
-        return $retorno;
-    }
-
-    static function getNextSorteio($loteria_api_id = null, $especial = false)
-    {
-
-        $t = 1;
-        if ($especial) {
-            $t = 3;
+        .b {
+            color: #262a68;
+            font-weight: bold;
         }
-
-        $endpoint = '/loterias/concursosResumo?t=' . $t; // 1 - Próximos concursos
-        $retorno = api_controller::executeGet($endpoint);
-
-        if (empty($loteria_api_id) || empty($retorno)) {
-            return false;
-        } else {
-            foreach ($retorno as $loteria) {
-                if ($loteria['CodigoDaLoteria'] == $loteria_api_id) {
-                    return $loteria;
-                }
-            }
-            return false;
-        }
-    }
-
-    static function getLastSorteio($loteria_api_id = null, $especial = false, $quantidade = 5)
-    {
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = "/ultimos-resultados-filtrados?l=$loteria_api_id&q=$quantidade&c=9999999&e=$especial"; // 1 - Próximos concursos
-
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-                return $retorno; // retorna 5 últimas loterias
-            }
-            return false;
-        }
-    }
-
-    static function getResumoSorteio($loteria_api_id = null, $numero_sorteio = null, $qtd = 1, $especial = false)
-    {
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id) || empty($numero_sorteio)) {
-            return false;
-        } else {
-            $endpoint = '/ultimos-resultados-filtrados?l=' . $loteria_api_id . '&c=' . $numero_sorteio . '&q=' . $qtd . '&e=' . $especial; // 1 - Próximos concursos
-            $retorno = api_controller::executeGet($endpoint);
-            if (self::trataRetorno($retorno)) {
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getSorteiosBusca($loteria_api_id = null, $mes = null, $ano = null, $especial = false)
-    {
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = '/ultimos-resultados-filtrados?q=15&l=' . $loteria_api_id . '&m=' . $mes . '&ano=' . $ano . '&e=' . $especial;
-
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getMaioresPremiacoes($loteria_api_id = null, $qtd = 4, $especial = false)
-    {
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = '/estatistica/maiorPremiacao?l=' . $loteria_api_id . '&t=' . $qtd . '&e=' . $especial . '&a=false';
-            $retorno = api_controller::executeGet($endpoint);
-            if (self::trataRetorno($retorno)) {
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getPremiosPorEstado($loteria_api_id = null, $qtd = 4, $especial = false)
-    {
-
-        $ordem = ($especial) ? 6 : 3; // Premiação especial deve-se mudar a ordem
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/premiacaoEstado?l=' . $loteria_api_id . '&o=' . $ordem;
-            $retorno = api_controller::executeGet($endpoint);
-
-
-            if (self::trataRetorno($retorno)) {
-                if ($qtd > 50) {
-                    return $retorno;
-                } else {
-                    return array_slice($retorno, 0, $qtd);
-                }
-            }
-
-            return false;
-        }
-    }
-
-    static function getDezenasMaisSorteadas($loteria_api_id = null, $ordem = 'sorteio', $qtd = 5, $especial = false, $sorteio = 0)
-    {  // ordem : sorteio ou dezena
-        $especial = ($especial) ? 'true' : 'false';
-        $qtdDezenasResposta = 10;
-        if ($loteria_api_id == 8) {
-            $qtdDezenasResposta = 5;
-        }
-        $t = round($qtd / $qtdDezenasResposta) + 1;
-        if ($t == 0) $t = 1;
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/numerosMaisSorteados?l=' . $loteria_api_id . '&t=' . $t . '&o=' . $ordem . '&e=' . $especial;
-
-            $retorno = api_controller::executeGet($endpoint);
-            if (self::trataRetorno($retorno)) {
-                $dezenas = array();
-                $arr_dezenas = $retorno[$sorteio]['Dezenas'];
-
-                foreach ($arr_dezenas as $arr) {
-                    $dezenas = array_merge($dezenas, $arr);
-                }
-
-                return array_slice($dezenas, 0, $qtd);
-            }
-            return false;
-        }
-    }
-
-    static function getDezenasMenosSorteadas($loteria_api_id = null, $ordem = 'sorteio', $qtd = 5, $especial = false, $sorteio = 0)
-    {  // ordem : sorteio ou dezena
         
-        $t = 50;
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/numerosMaisSorteados?l=' . $loteria_api_id . '&t=' . $t . '&o=' . $ordem . '&e=' . $especial;
-
-            $retorno = api_controller::executeGet($endpoint);
-            if (self::trataRetorno($retorno)) {
-                $dezenas = array();
-                $arr_dezenas = $retorno[$sorteio]['Dezenas'];
-
-                foreach ($arr_dezenas as $arr) {
-                    $dezenas = array_merge($dezenas, $arr);
-                }
-
-                $dezenas = array_reverse($dezenas);
-                $dezenas = array_slice($dezenas, 0, $qtd);
-
-                usort($dezenas, function ($a, $b) {
-                    return $b['qtd'] - $a['qtd'];
-                });
-
-                return $dezenas;
+        .tableBG {
+            position: relative;
+        }
+        
+        .imgBG {
+            position: absolute;
+            z-index: -1;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .body {
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            min-width: 100% !important;
+            width: 100% !important;
+            background: #f5f5f5;
+            -webkit-text-size-adjust: none
+        }
+        
+        a {
+            color: #002a3a;
+            text-decoration: none
+        }
+        
+        p {
+            padding: 0;
+            margin: 0
+        }
+        
+        img {
+            -ms-interpolation-mode: bicubic;
+            /* Allow smoother rendering of resized image in Internet Explorer */
+        }
+        
+        .mcnPreviewText {
+            display: none !important;
+        }
+        
+        .header-text a {
+            color: #fff;
+            text-decoration: underline
+        }
+        
+        .btn-1 a,
+        .intro-title-1 a,
+        .intro-title-3 a,
+        .intro-title-4 a {
+            color: #ffffff;
+            text-decoration: none
+        }
+        
+        .nome {
+            position: absolute!important;
+            margin-top: 36px;
+            margin-left: 50px;
+        }
+        
+        .para {
+            position: absolute;
+            margin-top: 57px;
+            margin-left: 50px;
+        }
+        
+        .mensagem {
+            position: absolute;
+            margin-top: 90px;
+            margin-left: 50px;
+        }
+        
+        .valor {
+            position: absolute;
+            margin-top: 370px;
+            margin-left: 70px;
+        }
+        
+        .codigo {
+            position: absolute;
+            margin-top: 390px;
+            margin-left: 70px;
+        }
+        
+        .textomsg {
+            max-width: 200px;
+            word-wrap: break-word;
+            /* IE 5.5-7 */
+            white-space: -moz-pre-wrap;
+            /* Firefox 1.0-2.0 */
+            white-space: pre-wrap;
+            /* current browsers */
+        }
+        
+        .comousar {
+            position: absolute;
+            margin-top: 500px;
+            margin-left: 50px;
+        }
+        
+        .verpdf {
+            position: absolute;
+            margin-top: 600px;
+            margin-left: 50px;
+        }
+        /* Mobile styles */
+        
+        @media only screen and (max-device-width: 414px),
+        only screen and (max-width: 500px) {
+            .nome {
+                position: absolute;
+                margin-top: 36px;
+                margin-left: 40px;
             }
-            return false;
-        }
-    }
-
-    static function getDezenasMaisAtrasadas($loteria_api_id = null, $ordem = 'sorteio', $qtd = 5, $especial = false, $sorteio = 0)
-    {  // ordem : sorteio ou dezena
-        $especial = ($especial) ? 'true' : 'false';
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/dezenasMaisAtrasadas?l=' . $loteria_api_id . '&t=50&o=' . $ordem . '&e=' . $especial;
-
-            $retorno = api_controller::executeGet($endpoint);
-            if (self::trataRetorno($retorno)) {
-                $dezenas = array();
-                $arr_dezenas = $retorno[$sorteio]['Dezenas'];
-
-                foreach ($arr_dezenas as $arr) {
-                    $dezenas = array_merge($dezenas, $arr);
-                }
-
-                $dezenas = array_reverse($dezenas);
-
-                return array_slice($dezenas, 0, $qtd);
+            .para {
+                position: absolute;
+                margin-top: 57px;
+                margin-left: 40px;
             }
-            return false;
-        }
-    }
-
-    static function getLoteriaAnoInicioUltimoConcurso($loteria_api_id = null, $especial = false)
-    {  // ordem : sorteio ou dezena        
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'concurso?l=' . $loteria_api_id . '&c=999999&e=' . $especial;
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-                $info = array();
-                $info['AnoInicioLoteria'] = $retorno['AnoInicioLoteria'];
-                $info['NumeroAnterior'] = $retorno['NumeroAnterior'];
-
-                return $info;
+            .mensagem {
+                position: absolute;
+                margin-top: 70px;
+                margin-left: 40px;
             }
-            return false;
-        }
-    }
-
-    static function getInformacaoPrimeiraLoteria($loteria_api_id = null, $especial = false)
-    {  // ordem : sorteio ou dezena
-
-        $especial = ($especial) ? 'true' : 'false';
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'concurso?l=' . $loteria_api_id . '&c=1&e=' . $especial;
-
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-                return $retorno;
+            .valor {
+                position: absolute;
+                margin-top: 230px;
+                margin-left: 50px;
             }
-            return false;
-        }
-    }
-
-    static function getMaioresPremiacoesQtd($loteria_api_id = null, $qtd = 10, $acumulado = false)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/maiorPremiacao?l=' . $loteria_api_id . '&t=' . $qtd . '&a=' . ($acumulado ? 'true' : 'false');
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-                return $retorno;
+            .codigo {
+                position: absolute;
+                margin-top: 250px;
+                margin-left: 50px;
             }
-            return false;
-        }
-    }
-
-    static function getPremiosIndividuais($loteria_api_id = null, $acumulado = false)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/maiorPremiacao?l=' . $loteria_api_id . '&t=10&a=N' . ($acumulado ? 'E' : '');
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-                return $retorno;
+            .textomsg {
+                max-width: 200px;
+                word-wrap: break-word;
+                /* IE 5.5-7 */
+                white-space: -moz-pre-wrap;
+                /* Firefox 1.0-2.0 */
+                white-space: pre-wrap;
+                /* current browsers */
             }
-            return false;
-        }
-    }
-
-    static function getSomaDasDezenas($loteria_api_id = null, $especial = false)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/somaDasDezenas?l=' . $loteria_api_id . '&e=' . ($especial ? 'true' : 'false');
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
+            .comousar {
+                position: absolute;
+                margin-top: 320px;
+                margin-left: 40px;
             }
-            return false;
-        }
-    }
-
-    static function getPareseImpares($loteria_api_id = null, $especial = false)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/paresEImpares?l=' . $loteria_api_id . '&e=' . ($especial ? 'true' : 'false');
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
+            .verpdf {
+                position: absolute;
+                margin-top: 390px;
+                margin-left: 40px;
             }
-            return false;
-        }
-    }
-
-    static function getLinhasColunas($loteria_api_id = null, $especial = false, $ordem = 'linha')
-    {  // ordem : linha ou coluna        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/linhasEColunas?l=' . $loteria_api_id . '&o=' . $ordem . '&e=' . ($especial ? 'true' : 'false');
-
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getColunasPorConcurso($loteria_api_id = null)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/colunasPorConcurso?l=' . $loteria_api_id;
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getColunasSeguidasPorConcurso($loteria_api_id = null)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/colunasSeguidasPorConcurso?l=' . $loteria_api_id;
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getPlacaresMaisFrequentes($loteria_api_id = null)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/placaresMaisFrequentes?l=' . $loteria_api_id;
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-
-    static function getSomaDeGolsPorConcurso($loteria_api_id = null)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/somaDeGolsPorConcurso?l=' . $loteria_api_id;
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-
-    static function getQuantidadeDeGolsPorConcurso($loteria_api_id = null)
-    {  // ordem : sorteio ou dezena        
-
-        if (empty($loteria_api_id)) {
-            return false;
-        } else {
-            $endpoint = 'estatistica/quantidadeDeGolsPorConcurso?l=' . $loteria_api_id;
-            $retorno = api_controller::executeGet($endpoint);
-
-            if (self::trataRetorno($retorno)) {
-
-                return $retorno;
-            }
-            return false;
-        }
-    }
-
-    static function getQtySorteioAcumulados($loteria_api_id, $especial = false, $qtdSorteiosRequest = 20, $qtdTentativas = 3)
-    {
-        if (empty($loteria_api_id)) {
-            return null;
-        }
-
-        $tentativa = 1;
-        $ganhou = false;
-
-        while (!$ganhou && $tentativa < $qtdTentativas) {
-            $qtd = $tentativa * $qtdSorteiosRequest;
-            $qtdSorteiosAcumulados = 0;
-            $data = self::getLastSorteio($loteria_api_id, $especial, $qtd);
-
-            if (!empty($data)) {
-                foreach ($data as $item) {
-                    if (isset($item['Premiacao']) && is_array($item['Premiacao']) && isset($item['Premiacao'][0]['Acertadores']) && $item['Premiacao'][0]['Acertadores'] > 0) {
-                        $ganhou = true;
-                        break;
-                    } else {
-                        $qtdSorteiosAcumulados++;
-                    }
-                }
+            .mobile-shell {
+                width: 414px !important;
+                min-width: 414px !important;
             }
 
-            $tentativa++;
+            .td {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+            .m-br-15 {
+                height: 15px !important;
+            }
+            .m-td,
+            .hidden,
+            .m-hide {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+                font-size: 0 !important;
+                line-height: 0 !important;
+                min-height: 0 !important;
+            }
+            .m-block {
+                display: block !important;
+            }
+            .hauto {
+                height: auto !important;
+            }
+            .mw-30 img {
+                width: 30px !important;
+                height: auto !important;
+            }
+            .mw-200 img {
+                width: 100% !important;
+                height: auto !important;
+            }
+            .fluid-img img {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+            }
+            .column {
+                float: left !important;
+                width: 100% !important;
+                display: block !important;
+            }
+            .content-spacing {
+                width: 15px !important;
+            }
+            /* Padding */
+            .p-0 {
+                padding: 0 !important;
+            }
+            .p-15 {
+                padding: 15px !important;
+            }
+            .pb-5 {
+                padding-bottom: 5px !important;
+            }
+            .pb-10 {
+                padding-bottom: 10px !important;
+            }
+            .pb-15 {
+                padding-bottom: 15px !important;
+            }
+            .pb-20 {
+                padding-bottom: 20px !important;
+            }
+            .pb-25 {
+                padding-bottom: 25px !important;
+            }
+            .pb-30 {
+                padding-bottom: 30px !important;
+            }
+            .p0-10 {
+                padding: 0 10px !important;
+            }
+            .p0-15 {
+                padding: 0 15px !important;
+            }
+            .p20-15 {
+                padding: 20px 15px !important;
+            }
+            .p25-15 {
+                padding: 25px 15px !important;
+            }
+            .p30-15 {
+                padding: 30px 15px !important;
+            }
+            /*   .p35-15 { padding: 35px 15px !important; }*/
+            .p0-15-15 {
+                padding: 0 15px 0px !important;
+            }
+            .p0-15-20 {
+                padding: 0 15px 20px !important;
+            }
+            .p0-15-30 {
+                padding: 0 15px 30px !important;
+            }
+            .p25-0-40 {
+                padding: 15px 0 30px !important;
+            }
+            /* Intro */
+            .headline {
+                font-size: 32px !important;
+                line-height: 39px !important;
+                padding: 50px 51px 15px 51px !important;
+            }
+            .hero-title-1 {
+                font-size: 18px !important;
+                line-height: 22px !important;
+                padding: 0px 51px 30px 51px !important;
+            }
+            .hero-title-2 {
+                font-size: 36px !important;
+                line-height: 42px !important;
+                padding: 0px 25px 0px 25px !important;
+            }
+            .hero-title-3 {
+                font-size: 34px !important;
+                line-height: 27px !important;
+            }
+            .intro-title-1 {
+                font-size: 32px !important;
+                line-height: 34px !important;
+                padding: 46px 53px 15px 53px !important;
+                letter-spacing: 0.32px !important;
+            }
+            .intro-title-2 {
+                font-size: 18px !important;
+                line-height: 22px !important;
+                padding: 0px 53px 0px 53px !important;
+            }
+            .intro-title-3 {
+                font-size: 20px !important;
+                line-height: 24px !important;
+                padding-bottom: 30px !important;
+            }
+            .intro-title-4 {
+                font-size: 24px !important;
+                line-height: 29px !important;
+                padding: 50px 53px 15px 53px !important;
+                letter-spacing: 1.2px !important;
+            }
+            .disclaimer {
+                font-size: 18px !important;
+                line-height: 22px !important;
+                padding: 15px 53px 15px !important;
+            }
+            .disclaimer2 {
+                font-size: 18px !important;
+                line-height: 22px !important;
+                padding: 40px 51px 40px !important;
+            }
+            .intro-title-5 {
+                font-size: 20px !important;
+                line-height: 24px !important;
+                padding: 0px 53px 40px 53px !important;
+            }
+            .intro-title-6 {
+                font-size: 14px !important;
+                line-height: 15px !important;
+                padding: 7px 41px !important;
+            }
+            /*Standard*/
+            .no-mobile {
+                text-indent: -99999em;
+                display: none !important;
+            }
+            .mobile-only {
+                text-indent: 0 !important;
+                display: block !important;
+                /*width: 480px !important;*/
+                width: 100% !important;
+                height: auto !important;
+                visibility: visible !important;
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            .mobile-headline {
+                padding: 45px 50px 20px 50px !important;
+                font-size: 24px !important;
+                line-height: 29px !important;
+            }
+            /* Titles */
+            .title-1 {
+                font-size: 15px !important;
+                line-height: 19px !important;
+            }
+            /* Button */
+            .btn-1 {
+                padding: 0 !important;
+            }
+            .btn-1 a {
+                display: inline-block;
+                padding: 6px 22px !important;
+            }
+            /* Table */
+            .table-text-1 {
+                font-size: 14px !important;
+                line-height: 18px !important;
+            }
+            .hide-for-desktop {
+                display: block !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                width: auto !important;
+                height: auto !important;
+            }
+            .hero-mobile {
+                display: block !important;
+            }
+            .table-title-c {
+                padding: 24px !important;
+            }
         }
-
-        return $qtdSorteiosAcumulados;
-    }
-
-    static private function trataRetorno($retorno)
-    {
-        if (empty($retorno)) {
-            return false;
-        } else {
-            return true;
+                
+        .table_absolute {
+            position: absolute!important;
         }
-    }
+    </style>
+
+
+<div class="body" style="padding:0 !important; margin:0 !important; display:block !important; min-width:100% !important; width:100% !important; background:#f5f5f5; -webkit-text-size-adjust:none;">
+    <!-- MOBILE PREHEADER PUSH ANY CONTENT AFTER THE PREHEADER FROM SHOWING UP INSERT UNDER BODY TAG -->
+
+    <img src="" width="1" height="1" jtr8st4oy="">
+
+     <!-- Start Content -->
+    <table style="margin-top:0px" bgcolor="#fff" width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tbody>
+            <tr>
+                <td style="" bgcolor="#fff" class="p35-15">
+                    <table bgcolor="#fff" width="100%" border="0" cellspacing="0" cellpadding="0">
+                    </table>
+                    <!-- HERO Images-->
+                    <table bgcolor="#fff" width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tbody>
+                            <tr>
+                                <td width="600" bgcolor="#fff" style="width:600px;">
+                                    <div class="mobile-only" style="text-indent: -99999em; display: none; height: 0; width: 0; overflow: hidden; max-height: 0;">
+                                        <a href="">
+                                            <img src="http://originalexperience.local/wp-content/themes/flowdigital/woocommerce/emails/template600.png" border="0" style="display: block; width: 100%;" align="bottom" alt="">
+                                        </a>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            <tr>
+                                <td width="600" bgcolor="#fff" style="width:600px;">
+                                    <div class="no-mobile">
+                                        <a href="">
+                                            <img src="http://originalexperience.local/wp-content/themes/flowdigital/woocommerce/emails/template600.png" border="0" width="300" height="1000" style="display: block;width: 600px;height: 835px;border: none;" align="top" alt="">
+                                        </a>
+                                    </div>
+                                </td>
+
+                            </tr>
+                            <!-- END HERO Images-->
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <!-- END Content -->
+
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+        <tbody>
+            <tr>
+                <td align="" valign="top">
+                    <table width="600" border="0" cellspacing="0" cellpadding="0" class="mobile-shell">
+                        <tbody>
+                            <tr>
+                                <td class="td" style="width:600px; min-width:600px; padding:0; margin:0; font-weight:normal;">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tbody>
+                                            <tr>
+                                                <td style="">
+                                                    <!-- Header -->
+                                                    <table class="table_absolute" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>
+                                                                    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="wrapper">
+                                                                        <tbody>
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <table style="margin-top:0px"  border="0" cellpadding="20" cellspacing="0" width="100%" class="wrapper">
+                                                                                        <tbody>
+                                                                                            <tr class="nome">
+                                                                                                <td style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                    <a href="" style="color:#a4acae; text-decoration:none;">
+                                                                                                        <b style="position:absolute; top: 0px" class="b">De:</b> Pedro Henrique Santos
+                                                                                                    </a>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                            <tr class="para">
+                                                                                                <td style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                    <a href="" style="color:#a4acae; text-decoration:none;">
+                                                                                                        <b class="b">Para:</b> Teste teste teste
+                                                                                                    </a>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        </tbody>
+
+                                                                                        <tr class="mensagem">
+                                                                                            <td class="textomsg" style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                <b class="b">Mensagem:</b><br>Receba esse presenteesse presenteesse presenteesse presente
+                                                                                            </td>
+                                                                                        </tr>
+
+                                                                                        <tr class="valor">
+                                                                                            <td style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                <a href="" style="color:#a4acae; text-decoration:none;">
+                                                                                                    <b class="b">R$ 1000</b>
+                                                                                            </td>
+                                                                                        </tr>
+
+                                                                                        <tr class="codigo">
+                                                                                            <td style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                <b class="b">USE O
+                                                                                                        CÓDIGO<br>
+                                                                                                    </b>XXX-XXX-XXX
+                                                                                            </td>
+                                                                                        </tr>
+
+                                                                                        <tr class="comousar">
+                                                                                            <td style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                <B>USE O CÓDIGO<br>
+                                                                                                    </b>X
+                                                                                                <BR>X
+                                                                                                <BR>X
+                                                                                                <BR>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                        <tr class="verpdf">
+                                                                                            <td style="font-family:Helvetica, Arial, sans-serif; color:#a4acae; font-size:12px; padding-top:15px; padding-bottom:15px; padding-left:10px;">
+                                                                                                <b class="b">VISUALIZAR
+                                                                                                        EM
+                                                                                                        PDF<br></b>X
+                                                                                                <BR>X
+                                                                                                <BR>
+                                                                                            </td>
+                                                                                        </tr>
+
+                                                                        </tbody>
+                                                                        </table>
+
+
+                                                                        </td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>
+                                                                                <table border="0" cellpadding="0" cellspacing="0" style="border:none;border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;" width="100%" class="wrapper" bgcolor="#ffffff">
+                                                                                    <tbody>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </td>
+                                                                        </tr>
+                                                        </tbody>
+                                                        </table>
+                                                        </td>
+                                                        </tr>
+                                        </tbody>
+                                        </table>
+                                        <!-- END Header -->
+                                        
+                                       
+
+                                        </td>
+                                        </tr>
+                        </tbody>
+                        </table>
+                        </td>
+                        </tr>
+        </tbody>
+        </table>
+        <img src="" width="1" height="1" jtr8st4oy="">
+        </td>
+        </tr>
+        </tbody>
+    </table>
+
+
+    
+<?php
+}else{
+
+?>
+
+<div id="pwgc-email-top">
+    <?php do_action( 'pwgc_email_top', $item_data ); ?>
+</div>
+
+<div id="pwgc-email-before-recipient">
+    <?php do_action( 'pwgc_email_before_recipient', $item_data ); ?>
+</div>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap" rel="stylesheet">
+<style>
+*{
+  color: #262a68!important;
+    font-family: 'Montserrat', sans-serif !important;
 }
+.textopequeno{
+  font-size: 10px!important;
+}
+.textomedio{
+  font-size: 12px!important;
+}
+.textogrande{
+  font-size: 14px!important;
+}
+</style>
 
+<div data-template-type="html" style="height: auto; padding-bottom: 149px;" class="ui-sortable">
+  <table class="full" data-thumbnail="" data-module="Module-4" data-bgcolor="" cellspacing="0" cellpadding="0" border="0" bgcolor="#F5F5F5" align="center">
+      <tbody>
+          <tr>
+              <td>
+                  <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+                  <table class="margin-full ui-resizable" data-bgcolor="M4 Bgcolor 2" width="585" cellspacing="0" cellpadding="0" border="0" bgcolor="white" align="center">
+                      <tbody>
+                          <tr>
+                              <td>
+                                  <table class="margin-pad" width="600" cellspacing="0" cellpadding="0" border="0" align="center">
+                                      <tbody>
+                                          <tr>
+                                              <td style="font-size:0px" height="35">&nbsp;</td>
+                                          </tr>
+                                          <tr>
+                                              <td>
+                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                      <tbody>
+                                                          <tr>
+                                                              <td valign="top">
+                                                                  <!-- left column -->
+                                                                  <table class="res-full textopequeno" width="585" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                      <tbody>
+                                                                          <tr height="100">
+                                                                              <td width="300">
+                                                                                  <table class="full textopequeno" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <span><b class="textomedio">De: </b>Pedro henrique Romio dos santos<br><b class="textomedio" >Para: </b>teste teste teste teste</span>
+                                                                                              <br><br>
+                                                                                              <span>Mensagem de teste,Mensagem de teste,Mensagem de teste,Mensagem de teste, </span>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                              <td width="300">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <td>
+                                                                                                  <img style="width: 100%; display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/01.png" width="300">
+                                                                                              </td>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                          </tr>
+                                                                      </tbody>
+                                                                  </table>
+                                                                  <table class="res-full" width="585" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                      <tbody>
+                                                                          <tr height="100">
+                                                                              <td width="585">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <td>
+                                                                                                  <img style="width: 100%; display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/2.12.png" width="585">
+                                                                                              </td>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                          </tr>
+                                                                      </tbody>
+                                                                  </table>
+                                                                  <div></div>
+                                                                  <table class="res-full" style="background-color: rgb(239, 239, 239);;" width="585" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                      <tbody>
+                                                                          <tr>
+                                                                              <td width="71">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <td>
+                                                                                                  <img style=" display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/2.2.png" width="71">
+                                                                                              </td>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+
+                                                                              <td>
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                                      <tbody>
+                                                                                          <!-- tr -->
+                                                                                          <tr class="textopequeno" style="">
+                                                                                            <td style="width: 100%;background-color: rgb(239, 239, 239); "><span class="textogrande" ><b>R$ 69,00</b></span><br>Número do cartão do presente<br><span class="textogrande"><b>PQTG-UYLA-MY44-WSMR</b></span> 
+                                                                                          </tr>
+                                                                                          <!-- tr end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                                  </td>
+                                                                                  <td width="280">
+                                                                                      <table class="full" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                                          <!-- image -->
+                                                                                          <tbody>
+                                                                                              <tr>
+                                                                                                  <td>
+                                                                                                      <img style="/*! width: 100%; */ display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/2.4.png" width="280">
+                                                                                                  </td>
+                                                                                              </tr>
+                                                                                              <!-- image end -->
+                                                                                          </tbody>
+                                                                                      </table>
+                                                                                      <div></div>
+                                                                                  </td>
+                                                                          </tr>
+                                                                      </tbody>
+                                                                  </table>
+                                                                  <table class="res-full" width="585" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                      <tbody>
+                                                                          <tr height="">
+                                                                              <td width="585">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <td>
+                                                                                                  <img style="width: 100%; display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/2.5.png" width="585">
+                                                                                              </td>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                          </tr>
+                                                                      </tbody>
+                                                                  </table>
+                                                                  <table class="res-full textopequeno" width="585" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                      <tbody>
+                                                                          <tr height="100">
+                                                                              <td width="263">
+                                                                                  <table class="full textopequeno" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                                                      <!-- image -->
+                                                                                      <tbody  >
+                                                                                          <tr  >
+                                                                                            <b class="textomedio" >COMO USAR?</b><br><span class="textopequeno" >CLIQUE EM RESGATAR, FAÇA O LOGIN COMO NOVO USUÁRIO (CAMPO REGISTRAR) E PRONTO SEUS PONTOS JÁ ESTÃO CREDITADOS NA SUA ORIGINAL WALLET.</span>
+                                                                                            </tr>
+                                                                                            <br><br>
+                                                                                            <tr class="textopequeno" ><b class="textomedio" >VISUALIZAR EM PDF</b><br><span class="textopequeno" >IMPRIMA COM RESPONSABILIDADE<br>MENOS TINTA E MENOS PAPEL<br>MENOR IMPACTO AMBIENTAL<br></span>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                              <td width="263">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="right">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr style="float:right" >
+                                                                                              <img  style="float:right" src="https://play-lh.googleusercontent.com/ufwUy4SGVTqCs8fcp6Ajxfpae0bNImN1Rq2cXUjWI7jlmNMCsXgQE5C3yUEzBu5Gadkz=s180-rw" alt="">
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                              <td width="59">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="right">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <td>
+                                                                                                  <img style="width: 100%; display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/03.png" width="59">
+                                                                                              </td>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                          </tr>
+                                                                      </tbody>
+                                                                  </table>
+                                                                  <table class="res-full" width="585" cellspacing="0" cellpadding="0" border="0" align="left">
+                                                                      <tbody>
+                                                                          <tr>
+
+
+
+                                                                              <td width="585">
+                                                                                  <table class="full" cellspacing="0" cellpadding="0" border="0" align="center">
+                                                                                      <!-- image -->
+                                                                                      <tbody>
+                                                                                          <tr>
+                                                                                              <td>
+                                                                                                  <img style="width: 100%; display: block; line-height: 0px; font-size: 0px; border: 0px; " src="https://www.originalgirl.com.br/wp-content/themes/flowdigital/woocommerce/emails/img/04.png" width="585">
+                                                                                              </td>
+                                                                                          </tr>
+                                                                                          <!-- image end -->
+                                                                                      </tbody>
+                                                                                  </table>
+                                                                                  <div></div>
+                                                                              </td>
+                                                                          </tr>
+                                                                      </tbody>
+                                                                  </table>                                                                        
+                                                                </td>
+                                                          </tr>
+                                                      </tbody>
+                                                  </table>
+                                                </td>
+                                          </tr>
+                                        
+                                      </tbody>
+                                  </table>
+                                  </td>
+                          </tr>
+                      </tbody>
+
+                  </table>
+                  </td>
+          </tr>
+      </tbody>
+  </table>
+</div>
+<?php
+}
