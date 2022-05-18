@@ -1,3 +1,5 @@
+Conversão com cwebp
+
 WebP Convert 2.9.0 ignited
 PHP version: 7.3.31-1+ubuntu18.04.1+deb.sury.org+1
 Server software: nginx/1.14.0
@@ -127,3 +129,49 @@ Exec failed (return code: 126)
 Note: You can prevent trying this precompiled binary, by setting the "skip-these-precompiled-binaries" option to "cwebp-061-linux-x86-64"
 
 Error: Failed converting. Check the conversion log for details.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// conversão com GD
+
+WebP Convert 2.9.0 ignited
+PHP version: 7.3.31-1+ubuntu18.04.1+deb.sury.org+1
+Server software: nginx/1.14.0
+
+source: /var/www/endeavororgbr/wordpress/wp-content/uploads/2022/05/foto-Mariana-Dias-ft-Guilherme-Henrique-2-scaled-e1652291206679.jpg
+destination: /var/www/endeavororgbr/wordpress/wp-content/webp-express/webp-images/doc-root/wp-content/uploads/2022/05/foto-Mariana-Dias-ft-Guilherme-Henrique-2-scaled-e1652291206679.jpg.webp
+
+Gd converter ignited
+Destination folder does not exist. Creating folder: /var/www/endeavororgbr/wordpress/wp-content/webp-express/webp-images/doc-root/wp-content/uploads/2022/05
+
+Options:
+------------
+- quality: 80
+- auto-limit: true
+- log-call-arguments: true
+
+Note that these are the resulting options after merging down the "jpeg" and "png" options and any converter-prefixed options
+
+GD Version: 2.3.0
+image is true color
+Running auto-limit
+Quality setting: 80.
+Quality of source image could not be established (Imagick or GraphicsMagick is required). Sorry, no auto-limit functionality for you.
+Using supplied quality (80).
+
+Converted image in 232 ms, reducing file size with 34% (went from 92 kb to 61 kb)
+
