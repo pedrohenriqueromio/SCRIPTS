@@ -1,0 +1,219 @@
+
+$pdf = '
+<style>
+@page {
+    margin: 0px;
+}
+@page *{
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+</style>
+
+<style>
+.page_break {
+     page-break-before: always;
+}
+@page{
+    size: a4 landscape;
+}
+</style>
+
+<div  style="" background-color: #fff;color: #000000;" bgcolor="#fff" text="#000000">
+    <table>  
+        <tr>
+            <td bgcolor="#fff">
+                <table class="" style="" >
+                    <tr>
+                        <td align="center" valign="top" style="border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0; "class="">
+                            <table style="" >
+                                <tr>
+                                    <td align="left" valign="top" style=" border-collapse: collapse; border-spacing: 0;border-right: 1.5px solid black;">
+                                        
+                                        <div style="height:599px;" >
+                                            <img border="0" vspace="0" hspace="0" src="https://i.ibb.co/0XTkDp2/r-topo.png"
+                                                alt="Please enable images to view this content" title="Hero Image"
+                                                width="1150"
+                                                style="width: 100%;color: #000000; font-size: 13px; margin: 0; padding: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: block;" />
+                                            <div
+                                                style="line-height:24px;padding-left: 6.25%; padding-right: 6.25%; text-align:left;color:#14171a;font-size:40px;font-weight:bold; ">
+                                                VOUCHER
+                                                </div>
+                                            <div
+                                                style="line-height:24px;padding-left: 6.25%; padding-right: 6.25%; padding-top: 6px;text-align:left;color:#14171a;font-size:40px;">
+                                                ORIGINAL</div>
+                                            <br><br>
+                                            <p style="line-height:25px;font-size:25px; padding-left: 6.25%; padding-right: 6.25%;">
+                                            COMANDANTE POR 1 DIA! BEM-VINDO A BORDO
+                                            
+                                            </p>    
+
+                                            <div style="line-height:22px; padding-left: 6.25%; padding-right: 6.25%;" >
+                                                <table border="0" cellpadding="0" cellspacing="0" align="left" bgcolor="#FFFFFF" width="1150" style="border-collapse: collapse; border-spacing: 0; padding: 0; width: inherit; max-width: 1150px;" class="container">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td align="left" valign="top" style="border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0; " class="list-item">
+                                                                <table align="left" border="0" cellspacing="0" cellpadding="0" style=" width: inherit; margin: 0; padding: 0; border-collapse: collapse; border-spacing: 0;">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td align="left" valign="top" style="border-collapse: collapse; border-spacing: 0;width: 25px;">
+                                                                                <div style="">
+                                                                                <img height="60" height="40" style="vertical-align:text-top;" src="https://i.ibb.co/J32CHFT/Selection-790.png">
+                                                                                </div>
+                                                                            </td>
+
+                                                                            <br><br>
+                
+                                                                            <td align="left" valign="" style="border-collapse: collapse; border-spacing: 0;font-size:25px;">
+                                                                            Durante a experiência marque a Original no seu stories e ganhe 10% de desconto na sua próxima compra!
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="text-align: left;padding-left: 6.25%; font-size:20px;line-height:24px;color:#616161">
+                                            <img height="40" style="margin-top:-8px;vertical-align:text-top;" src="https://i.ibb.co/8bcRdpD/insta.png">
+                                            <span>@originalexperiencebrasil</span>
+                                        </div>
+                                        <br>
+                                        
+                                        <img style="margin-top:2px " src="https://i.ibb.co/VWtzH6F/bottom.png"
+                                        alt="Please enable images to view this content" title="Hero Image"
+                                        width="100%"
+                                        style="" />
+                                        
+                                        <br><br>
+
+                                    </td>
+                                    <td align="left" valign="top"
+                                        style="font-size: 17px; font-weight: 400; line-height: 160%; border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0;width: 575px;color: #000000;padding-left: 1%;"
+                                        class="paragraph">
+                                        <img border="0" vspace="0" hspace="0" src="https://i.ibb.co/SQnVKDb/l-topo.png"
+                                            alt="Please enable images to view this content" title="Hero Image"
+                                            width="1150"
+                                            style="width: 100%;color: #000000; font-size: 13px; margin: 0; padding: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: block;" />
+                                        <div
+                                            style="line-height:24px;padding-left: 6.25%; padding-right: 6.25%; text-align:left;color:#14171a;font-size:40px;font-weight:bold; ">
+                                            AGENDAMENTO</div>
+                                        <div
+                                            style="line-height:24px;padding-left: 6.25%; padding-right: 6.25%; text-align:left;color:#14171a;font-size:25px; ">
+                                            Seller</div>
+                                        <br>
+
+                                        <div
+                                            style="text-align: left;padding-left: 6.25%; font-size:20px;line-height:24px;color:#616161">
+                                            <img height="25" style="vertical-align:text-top;"
+                                                src="https://i.ibb.co/hLg04s4/mail.png">
+                                            <span>seller@seller.com</span>
+                                        </div><br>
+                                        <div
+                                            style="text-align: left;padding-left: 6.25%; font-size:20px;line-height:24px;color:#616161">
+                                            <img height="25" style="vertical-align:text-top;"
+                                                src="https://i.ibb.co/TBxQfkW/whats.png">
+                                            <span>3198754545</span>
+                                        </div><br>
+                                        <div
+                                            style="text-align: left;padding-left: 6.25%; font-size:20px;line-height:24px;color:#616161">
+
+                                            <img height="25" style="vertical-align:text-top;"
+                                                src="https://i.ibb.co/mtT0VjB/local.png">
+                                            <span>Teste - Teste2 </span>
+                                        </div><br>
+                                        <div
+                                            style="text-align: left;padding-left: 6.25%; font-size:20px;line-height:24px;color:#616161">
+                                            <img height="25" style="vertical-align:text-top;"
+                                                src="https://i.ibb.co/ckn30ps/dica.png">
+                                            <span>Teste</span>
+
+                                        </div><br>
+                                        <div
+                                            style="text-align: left;padding-left: 6.25%; font-size:20px;line-height:24px;color:#616161">
+
+                                            <img height="25" style="vertical-align:text-top;"
+                                                src="https://i.ibb.co/nmTfJnb/calendar.png">
+                                            <span>1 ano a contar da data da compra</span>
+                                        </div><br>
+                                        <br>
+                                        <img border="0" vspace="0" hspace="0"
+                                            src="https://i.ibb.co/8MGSQK5/l-medio2.png"
+                                            alt="Please enable images to view this content" title="Hero Image"
+                                            width="1150"
+                                            style="width: 100%;color: #000000; font-size: 13px; padding: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: block;" />
+                                        <table border="0" cellpadding="0" cellspacing="0" align="center"
+                                            bgcolor="#FFFFFF" width="1150" style="border-collapse: collapse; border-spacing: 0; padding: 0; width: inherit;
+                                max-width: 1150px;" class="container">
+                                            <tr>
+                                                <td align="center" valign="top"
+                                                    style="border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0; "
+                                                    class="list-item">
+                                                    <table align="center" border="0" cellspacing="0" cellpadding="0"
+                                                        style="width: inherit; margin: 0; padding: 0; border-collapse: collapse; border-spacing: 0;">
+                                                        <tr>
+                                                            <td align="left" valign="top"
+                                                                style="border-collapse: collapse; border-spacing: 0;width: 250px;">
+                                                                <div
+                                                                    style="line-height:15px ; text-align:left;color:#14171a;font-size:15px;">
+                                                                    <ul style="padding-inline-start: 15px;">
+                                                                        <div
+                                                                            style="text-align:left; color:#14171a;font-size:30px;font-weight:bold">
+                                                                            INSTRUÇÕES</div>
+                                                                        <br>
+                                                                        <li>No dia da experiência, apresente este QR
+                                                                            CODE pelo celular ou voucher impresso para o
+                                                                            parceiro operador.</li>
+                                                                        <li>O parceiro vai solicitar o nome, e-mail, tel
+                                                                            e e cpf do realizador da experiência</li>
+                                                                        <li>Você receberá um pedido de avaliação após a
+                                                                            realização experiência, sua opinião é
+                                                                            extremamente importante na melhoria e
+                                                                            avaliação dos serviços!</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </td>
+                                                            <td align="right" valign="top"
+                                                                style="border-collapse: collapse; border-spacing: 0;width: 30px;">
+                                                            </td>
+                                                            <td align="right" valign="top"
+                                                                style="border-collapse: collapse; border-spacing: 0;width: 150px;">
+                                                                <img border="0" vspace="0" hspace="0"
+                                                                    src="https://wikiimg.tojsiabtv.com/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png"
+                                                                    width="150px"
+                                                                    alt="Please enable images to view this content"
+                                                                    title="Hero Image"
+                                                                    style="width: 100%;color: #000000; font-size: 13px; margin: 0; padding: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: block;" />
+                                                                <div
+                                                                    style="text-align:right;color:#14171a;font-size:15px; margin-right: 15px;">
+                                                                    CÓDIGO</div>
+                                                                <div
+                                                                    style="text-align:right;color:#14171a;font-size:15px; margin-right: 15px;">
+                                                                    123456</div>
+                                                            </td>
+                                                        </tr>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <table border="0" cellpadding="0" cellspacing="0" align="center" width="1150"
+        style="border-collapse: collapse; border-spacing: 0; padding: 0; width: inherit;max-width: 1150px; margin-left: -50px; ;"
+        class="wrapper">
+    </table>
+    </td>
+    </tr>
+    </table>
+</div>
+<div class="page_break"></div>
+<img style="width: 1180px; height: 800px; " src="https://i.ibb.co/x7JYbhL/voucher2.png">
+';
