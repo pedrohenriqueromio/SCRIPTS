@@ -1,0 +1,47 @@
+add_action("wp_ajax_sorteio", "sorteio");
+add_action("wp_ajax_nopriv_sorteio", "sorteio");
+
+// https://dev.hellfish.media/wp-admin/admin-ajax.php?action=sorteio
+
+function sorteio()
+{
+
+	header('Content-Type: application/json;charset=utf-8');
+
+	$result = ['success' => false];
+
+	$name      = $_REQUEST["name"] ?? '';
+	$phone     = $_REQUEST["phone"] ?? '';
+	$email     = $_REQUEST["email"] ?? '';
+
+	$api_url   = 'https://API/';
+    $response = wp_remote_post( $api_url , array(
+        'timeout'     => 45,
+        'Expect' => '',
+        'headers' => array(
+            'Content-Type'  => 'application/json; charset=utf-8',
+        ),
+        'body' => json_encode(
+            [
+                'name'     => $name,
+                'phone'    => $phone,
+                'email'    => $email,
+            ]
+        )
+    ));
+
+    if( $response['response']['code'] == 200){
+
+        $result['success'] = true ; 
+        $result['response'] = json_decode( ( $response['body'] ?? '' ), true )  ; 
+
+    } else {
+        $result['response'] = [
+            'message' => 'Não foi possivel completar sua requisição'
+        ];
+    }
+
+	echo json_encode($result);
+
+	die();
+}
