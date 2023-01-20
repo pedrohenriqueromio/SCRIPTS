@@ -1,0 +1,45 @@
+<?php
+
+namespace Site\Theme\Controller;
+
+use Carbon_Fields\Container\Container;
+use Carbon_Fields\Field\Field;
+class SiteController
+{
+	public function __construct() {
+		add_action( 'rest_api_init', [ &$this, 'register_route' ] );
+	}
+
+    public function register_route()
+    {
+        register_rest_route( 'site/brand', 'load-more-recipe/(?P<brand>[a-zA-Z0-9_-]+)/(?P<offset>\d+)',array(
+            'methods'  => 'GET',
+            'callback' => [ $this, 'load_more_recipes' ]
+        ));
+    }
+
+    public function load_more_recipes($request)
+    {
+        $offset = sanitize_text_field($request['offset']);
+        $brand = sanitize_text_field($request['brand']);
+
+        $more_posts = new \WP_Query( array(
+            'post_type' => 'receita',
+            'posts_per_page' => 6,
+            'offset' => $offset,
+            'tax_query' => array(
+                array (
+                    'taxonomy' => 'marcas',
+                    'field' => 'slug',
+                    'terms' => $brand 
+                )
+            ),
+        ) );
+
+        if (!empty($more_posts->posts)) {
+            return $more_posts->posts;
+        }
+
+        return new \WP_Error('no results found', '', array('status' => 404));
+    }
+}
