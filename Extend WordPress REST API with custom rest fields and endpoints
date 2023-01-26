@@ -1,0 +1,30 @@
+/**
+ * Extende a REST API do WordPress com custom rest fields e endpoints, necessário para adicionar um parametro ao web-story
+ */
+class RestOptions{
+
+    function __construct()
+    {
+        add_action( 'rest_api_init', [$this, 'adding_web_story_params'] );
+    }
+
+    public function adding_web_story_params() 
+    {
+        register_rest_field( 'web-story',
+            'extra',
+            array(
+                'get_callback'      => [$this, 'ws_meta_callback'],
+                'update_callback'   => null,
+                'schema'            => null,
+            )
+        );
+    }
+    
+    public function ws_meta_callback( $story, $field_name, $request)
+    {
+        $data = $story['id'] ; // faz alguma query por exemplo
+        return ( $data );
+    }
+}
+
+new RestOptions();
